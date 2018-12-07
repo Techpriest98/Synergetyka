@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Predator victim</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+	<style>
+		@font-face {
+    		font-family: EveSansRegular;
+    		src: url("evesansneue-regular.otf") format("opentype");
+		}
+
+		@font-face {
+    		font-family: EveSansAlpha;
+    		src: url("eve.ttf") format("truetype");
+		}
+
+		h2
+		{
+			font-family: EveSansAlpha;
+		}
+
+		p
+		{
+			font-family: EveSansRegular;
+		}
+
+		canvas
+		{
+			border: 1px #000 solid;
+		}	
+	</style>
+</head>
+<body>
+	<div class="container">
+		<br>
+		<h2>predator victim model</h2>
+		<p>by Andrii Yeromenko ©2018</p>
+
+		<div class="row">
+			<div class="col-6">
+
+
+
+				<!-- Wolf & Rabbit plots-->
+				<div class="row">
+					<div class="col-6">
+						<div class="row">
+							<div class="col-6">
+								<strong><p>Birth rate</p></strong>
+								<input type="text" placeholder="k4 = 2e-3" id="k4" style="width: 100%;">
+							</div>
+							<div class="col-6">
+								<strong><p>Mortality</p></strong>
+								<input type="text" placeholder="k3 = -8e-2" id="k3" style="width: 100%;">
+							</div>
+						</div>
+
+						<strong><p>Predator initial number</p></strong>
+						<input type="text" placeholder="y0 = 30" id="y" style="width: 100%;">
+					</div>
+					<div class="col-6">
+						<div class="row">
+							<div class="col-6">
+								<strong><p>Birth rate</p></strong>
+								<input type="text" placeholder="k1 = 3e-2" id="k1" style="width: 100%;">
+							</div>
+							<div class="col-6">
+								<strong><p>Mortality</p></strong>
+								<input type="text" placeholder="k2 = -5e-4" id="k2" style="width: 100%;">
+							</div>
+						</div>
+
+						<strong><p>Victim initial number</p></strong>
+						<input type="text" placeholder="x0 = 80" id="x" style="width: 100%;">
+					</div>
+				</div>
+				<div class="time-input">
+					<div class="row">
+						<div class="col-3">
+							<div id="time-info">
+								<p>Time t = </p>
+							</div>	
+						</div>
+						<div class="col-6">
+							<input type="range" min="0" max="2048" value="0" id="timeRange" style="width: 100%;">	
+						</div>
+						<div class="col-3">
+							<input type="text" placeholder="Delta time" id="deltaTime" style="width: 100%;">
+						</div>
+					</div>
+				</div>
+
+				<button id="perfectButton">Get predator/victim initial numbers</button>
+			</div>
+
+			<div class="col-6">
+				<div class="row">
+					<div class="col-6">
+						<input type="text" placeholder="max X" id="max-x" style="width: 100%;">
+					</div>
+					<div class="col-6">
+						<input type="text" placeholder="max Y" id="max-y" style="width: 100%;">
+					</div>
+				</div>
+				<strong><p>Predator number / Victim number</p></strong>
+				<canvas height='512' width='512' id="main-plot">Обновите браузер</canvas>
+			</div>
+		</div>
+
+
+	</div>
+
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+	<script>
+	window.onload = function()
+	{
+		var time, dtime;
+		var population = {rabits : 80, wolfs : 30};
+
+		var k1, k2, k3, k4;
+
+		var mainCanvas = document.getElementById("main-plot"),
+			mainCtx = mainCanvas.getContext('2d');
+
+		var mainMouse = { x: 0, y: 0};
+
+		mainCtx.canvas.addEventListener('mouseup', function(){
+				buildMainPlot(event);
+		});
+
+		document.getElementById("perfectButton").onclick = function()
+		{
+			k1 =  parseFloat(document.getElementById("k1").value) ? parseFloat(document.getElementById("k1").value) : 3e-2;
+			k2 =  parseFloat(document.getElementById("k2").value) ? parseFloat(document.getElementById("k2").value) : -5e-4;
+			k3 =  parseFloat(document.getElementById("k3").value) ? parseFloat(document.getElementById("k3").value) : -8e-2;
+			k4 =  parseFloat(document.getElementById("k4").value) ? parseFloat(document.getElementById("k4").value) : 2e-3;
+
+			document.getElementById("x").value = -k3 / k4;
+			document.getElementById("y").value = -k1 / k2;
+		}
+
+		document.getElementById("timeRange").oninput = function()
+		{
+			document.getElementById("time-info").innerHTML = "<p>Час t = "+document.getElementById("timeRange").value+"</p>";
+			buildMainPlot();
+			buildRabbitPlot();
+			buildWolfPlot();
+		}
+
+		function buildMainPlot()
+		{
+			population.rabits = parseFloat(document.getElementById("x").value) ? parseFloat(document.getElementById("x").value) : 80;
+			population.wolfs =  parseFloat(document.getElementById("y").value) ? parseFloat(document.getElementById("y").value) : 30;
+
+			maxX = parseFloat(document.getElementById("max-x").value) ? parseFloat(document.getElementById("max-x").value) : 100;
+			maxY = parseFloat(document.getElementById("max-y").value) ? parseFloat(document.getElementById("max-y").value) : 100;
+
+			k1 =  parseFloat(document.getElementById("k1").value) ? parseFloat(document.getElementById("k1").value) : 3e-2;
+			k2 =  parseFloat(document.getElementById("k2").value) ? parseFloat(document.getElementById("k2").value) : -5e-4;
+			k3 =  parseFloat(document.getElementById("k3").value) ? parseFloat(document.getElementById("k3").value) : -8e-2;
+			k4 =  parseFloat(document.getElementById("k4").value) ? parseFloat(document.getElementById("k4").value) : 2e-3;
+
+			let endTime = document.getElementById("timeRange").value ? document.getElementById("timeRange").value : 20;
+
+			dtime = parseFloat(document.getElementById("deltaTime").value) ? parseFloat(document.getElementById("deltaTime").value) : 0.5;
+			time = 0;
+			
+			mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+			mainGrid(mainCtx, mainCanvas.width, mainCanvas.height, maxX, maxY);
+			mainCtx.fillStyle = "#000";
+			for(let t = time; t < endTime; t += dtime)
+        	{
+        		renderMain(population.rabits, population.wolfs, maxX, maxY, mainCanvas.width, mainCanvas.height);
+        	}
+
+			mainCtx.fillStyle = "#00f";
+        	mainCtx.fillRect((mainCanvas.width-25) / maxX * population.rabits + 25,0,1, mainCanvas.height-25);
+        	mainCtx.fillRect(25,(mainCanvas.height-25) - ((mainCanvas.height-25) / maxY * population.wolfs),mainCanvas.width-25, 1);
+        	mainCtx.fillText(Math.round(population.rabits), (mainCanvas.width-25) / maxX * population.rabits + 25, mainCanvas.height-10);
+        	mainCtx.fillText(Math.round(population.wolfs), 0, (mainCanvas.height-25) - ((mainCanvas.height-25) / maxY * population.wolfs));
+		}
+
+		function mainGrid(canvas, width, height, maxX, maxY)
+		{
+			canvas.fillStyle = "#f00";
+			canvas.fillRect(0, height-25, width, 1);
+			canvas.fillRect(25, 0, 1, height);
+
+			canvas.font = "14px Arial";
+			canvas.fillText(maxY, 0, 14);
+			canvas.fillText(0, 10, height-10);
+			canvas.fillText("Вов.", 0, 30);
+			canvas.fillText(maxX, width-30, height-10);
+			canvas.fillText("Зайці", width-100, height-10);
+		}
+
+		function renderMain(x, y, xMax, yMax, width, height)
+		{
+				let newX = x + dtime * (k1 * x + k2 * x * y);
+				let newY = y + dtime * (k3 * y+ k4 * newX * y);
+				
+				let printX = (width-25) / xMax * newX + 25;
+				let printY = (height-25) - ((height-25) / yMax * newY);
+				mainCtx.fillRect(printX, printY, 1, 1);
+
+				population.rabits = newX;
+				population.wolfs = newY;
+		}
+	}
+	</script>
+</body>
+</html>
